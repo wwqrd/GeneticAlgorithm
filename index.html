@@ -22,7 +22,8 @@
 			*/
 			var BITS = 16;
 			var CHROMES = 4;
-			var VARIATIONS = 10;
+			var VARIATIONS = 500;
+			var POTENTIAL_MATES = 10;
 			var population = [];
 			
 			var fitness = function(candidate) {
@@ -93,7 +94,7 @@
 					return b.fitness - a.fitness;
 				}
 				
-				for(var i = 0; i < 5; i++) {
+				for(var i = 0; i < POTENTIAL_MATES; i++) {
 					var candidate = Math.floor(Math.random()*VARIATIONS);
 					candidates.push({'id':candidate, 'fitness':fitnessMatrix[candidate]});
 				}
@@ -105,18 +106,19 @@
 				var avFit = popFitnessAverage();
 				if(avFit > 0.9) {
 					clearTimeout(timer);
-					console.log(population);
+					//console.log(population);
 				} else {
 					console.log(avFit);
 					mutatePopulation();
+					drawPopulation();
 				}
 			}
 			
 			var init = function() {
 				seedPopulation();
-				console.log(population);
+				//console.log(population);
 			
-				timer = setInterval(test,50);
+				timer = setInterval(test,100);
 			}
 			
 			var popFitnessAverage = function() {
@@ -129,6 +131,14 @@
 				return total/count;
 			}
 			
+			var drawPopulation = function() {
+				var output = $('#output');
+				for(var i in population) {
+					opacity = fitness(population[i]);
+					output.prepend("<div style='background:#000;opacity:"+opacity+";float:left;width:10px;height:10px;'>&nbsp;</div>");
+				}
+			}
+			
 			var timer;
 			
 			init();
@@ -137,6 +147,8 @@
 </head>  
  
 <body>
+	
+	<div id='output'></div>
  
 </body>
  
