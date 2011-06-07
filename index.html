@@ -1,0 +1,143 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head> 
+	<meta charset="utf-8" />  
+	<title></title>  
+	<style type='text/css'>
+	</style>
+	<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js'></script>
+	<script type='text/javascript'>
+		$(function() {
+			/*
+			[Start] Generate random population of n chromosomes (suitable solutions for the problem)
+			[Fitness] Evaluate the fitness f(x) of each chromosome x in the population
+			[New population] Create a new population by repeating following steps until the new population is complete
+			[Selection] Select two parent chromosomes from a population according to their fitness (the better fitness, the bigger chance to be selected)
+			[Crossover] With a crossover probability cross over the parents to form a new offspring (children). If no crossover was performed, offspring is an exact copy of parents.
+			[Mutation] With a mutation probability mutate new offspring at each locus (position in chromosome).
+			[Accepting] Place new offspring in a new population
+			[Replace] Use new generated population for a further run of algorithm
+			[Test] If the end condition is satisfied, stop, and return the best solution in current population
+			[Loop] Go to step 2
+			*/
+			var BITS = 16;
+			var CHROMES = 4;
+			var VARIATIONS = 10;
+			var population = [];
+			
+			var fitness = function(candidate) {
+				var fitness = 0;
+				candidate = candidate.split("");
+				for(var i = 0; i < candidate.length; i++) {
+					if(candidate[i] == 1) {
+						fitness++;
+					}
+				}
+				return fitness/(CHROMES*BITS);
+			}
+			
+			var seedPopulation = function() {
+				for(var i = 0; i < VARIATIONS; i++) {
+					var candidate = "";
+					for(var j = 0; j < CHROMES*BITS; j++) {
+						candidate += Math.floor(Math.random()*2);
+					}
+					population.push(candidate);
+				}
+			}
+			
+			var mutatePopulation = function() {
+				/*
+				[Selection] Select two parent chromosomes from a population according to their fitness (the better fitness, the bigger chance to be selected)
+				[Crossover] With a crossover probability cross over the parents to form a new offspring (children). If no crossover was performed, offspring is an exact copy of parents.
+				[Mutation] With a mutation probability mutate new offspring at each locus (position in chromosome).
+				[Accepting] Place new offspring in a new population
+				*/
+				var offsprings = [];
+				
+				var fitnessMatrix = [];
+				
+				for(var i in population) {
+					fitnessMatrix[i] = fitness(population[i]);
+				}
+				
+				for(var i = 0; i < population.length; i++) {
+					// five random, select fittest.
+					var candidates = selectCandidates(population, fitnessMatrix);
+					
+					var offspring = "";
+					for(var j = 0; j < CHROMES; j++) {
+						var splice = Math.floor(Math.random()*2);
+						offspring += population[candidates[splice]].substr(j*BITS,BITS);
+					}
+					offspring = offspring.split("");
+					for(var j = 0; j < CHROMES*BITS; j++) {
+						var mutate = Math.floor(Math.random()*VARIATIONS*CHROMES);
+						if(mutate == 0) {
+							newVal = (offspring[j] == 0 ? 1 : 0);
+							offspring.splice(j,1,newVal);
+						}
+					}
+					offspring = offspring.join("");
+					
+					offsprings.push(offspring);
+				}
+				
+				population = offsprings;	
+			}
+			
+			var selectCandidates = function(population, fitnessMatrix) {
+				var candidates = [];
+				var fitnessSort = function(a, b) {
+					// sort decending
+					return b.fitness - a.fitness;
+				}
+				
+				for(var i = 0; i < 5; i++) {
+					var candidate = Math.floor(Math.random()*VARIATIONS);
+					candidates.push({'id':candidate, 'fitness':fitnessMatrix[candidate]});
+				}
+				candidates.sort(fitnessSort);
+				return [candidates[0]['id'], candidates[1]['id']];
+			}
+			
+			var test = function(fitness) {
+				var avFit = popFitnessAverage();
+				if(avFit > 0.9) {
+					clearTimeout(timer);
+					console.log(population);
+				} else {
+					console.log(avFit);
+					mutatePopulation();
+				}
+			}
+			
+			var init = function() {
+				seedPopulation();
+				console.log(population);
+			
+				timer = setInterval(test,50);
+			}
+			
+			var popFitnessAverage = function() {
+				var count = 0;
+				var total = 0;
+				for(var i in population) {
+					count++;
+					total += fitness(population[i]);
+				}
+				return total/count;
+			}
+			
+			var timer;
+			
+			init();
+		});
+	</script>
+</head>  
+ 
+<body>
+ 
+</body>
+ 
+</html>
