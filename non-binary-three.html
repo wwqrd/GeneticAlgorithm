@@ -4,41 +4,18 @@
 	<meta charset="utf-8" />  
 	<title></title>  
 	<style type='text/css'>
-	</style>
+	#output { background: #000; display: inline-block; }
+	</style> 
+	<script type='text/javascript' src='js/Three.js'></script>
+	<script type='text/javascript' src='js/RequestAnimationFrame.js'></script>
 	<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js'></script>
 	<script type='text/javascript'>
-	
-	/*
-
-
-							
-
-				var animate = function() {
-
-					for(var i = Math.floor(Math.random()*CUBE_COUNT); i < CUBE_COUNT; i++) {
-						cubes[i].position.x += (Math.random()-0.5)*10;
-						cubes[i].position.y += (Math.random()-0.5)*10;
-						cubes[i].position.z += (Math.random()-0.5)*10;
-
-					}
-
-					requestAnimationFrame( animate );
-					render();
-					//stats.update();
-				}
-
-				
-
-				init();
-				animate();
-
-			});
-	*/
 	
 		/* CONSTANTS */
 		// rendering
 		var FPS = 30;
-		var WIDTH = 300, HEIGHT = 300;
+		var WIDTH = 300;
+		var HEIGHT = 300;
 		var VIEW_ANGLE = 45,
 		    ASPECT = WIDTH / HEIGHT,
 		    NEAR = 0.1,
@@ -53,7 +30,7 @@
 		
 		/* GLOBAL VARS */	
 		// rendering
-		var _container, _output;
+		var _output;
 		var renderer, camera, scene;
 		//genetics
 		var timer;
@@ -149,7 +126,7 @@
 				} else {
 					console.log(avFit);
 					mutatePopulation();
-					drawPopulation();
+					//drawPopulation();
 				}
 			}
 			
@@ -169,6 +146,7 @@
 				return total/count;
 			}
 			
+			/*
 			var drawPopulation = function() {
 				var output = $('#output');
 				for(var i in population) {
@@ -176,20 +154,26 @@
 					output.prepend("<div style='background:#000;opacity:"+opacity+";float:left;width:10px;height:10px;'>&nbsp;</div>");
 				}
 			}
+			*/
 			
 
 			/* RENDERING --------------------------- */
 			
-			function initGraphics() {
-				// get the DOM element to attach to
-				// - assume we've got jQuery to hand
-				_container = document.createElement('div');
-				_container.setAttribute('id','container');
-				document.body.appendChild(_container);
-				//_container = $('#container');
+			// materials
+			var depthMaterial = new THREE.MeshDepthMaterial(
+			{
+				opacity: 0.7
+			});
 
-				// create a WebGL renderer, camera
-				// and a scene
+			var lambMaterial = new THREE.MeshLambertMaterial(
+			{
+			    color: 0xCC0000,
+				opacity: 0.1
+			});
+			
+			function initGraphics() {
+				_output = $('#output');
+				
 				renderer = new THREE.WebGLRenderer();
 				camera = new THREE.Camera(  VIEW_ANGLE,
 				                                ASPECT,
@@ -204,58 +188,21 @@
 				renderer.setSize(WIDTH, HEIGHT);
 
 				// attach the render-supplied DOM element
-				_container.appendChild(renderer.domElement);
+				_output.append(renderer.domElement);				
 
-				//>>>>>>>>>>>
-
-				// create the sphere's material
-				var depthMaterial = new THREE.MeshDepthMaterial(
-				{
-					opacity: 0.7
-				});
-
-				var lambMaterial = new THREE.MeshLambertMaterial(
-				{
-				    color: 0xCC0000,
-					opacity: 0.1
-				});
-
-				//>>>>>>>>>>				
-
-				for(var i = 0; i < CUBE_COUNT; i++) {
-					cubes[i] = new THREE.Mesh(
+				
+				for(var i = 0; i < 50; i++) {
+					var cube = new THREE.Mesh(
 					   new THREE.Cube(50,50,50),
 					   [depthMaterial]);
 
-					cubes[i].position.x = (Math.random()-0.5)*2000;
-					cubes[i].position.y = (Math.random()-0.5)*2000;
-					cubes[i].position.z = (Math.random()-0.5)*2000;
+					cube.position.x = (Math.random()-0.5)*2000;
+					cube.position.y = (Math.random()-0.5)*2000;
+					cube.position.z = (Math.random()-0.5)*2000;
 
 					// add the sphere to the scene
-					scene.addObject(cubes[i]);
-				}
-
-				// create the sphere's material
-				var particleMaterial = new THREE.ParticleBasicMaterial(
-				{
-				    color: 0xCCCC00,
-					opacity: 1
-				});
-
-				//>>>>>>>>>>				
-
-				for(var i = 0; i < CUBE_COUNT; i++) {
-					var particle = new THREE.Particle(particleMaterial);
-
-					particle.position.x = (Math.random()-0.5)*2000;
-					particle.position.y = (Math.random()-0.5)*2000;
-					particle.position.z = (Math.random()-0.5)*2000;
-
-					// add the sphere to the scene
-					scene.addObject(particle);
+					scene.addObject(cube);
 				}			
-
-				//>>>>>>>>>>>>
 
 
 				// create a point light
@@ -268,8 +215,6 @@
 
 				// add to the scene
 				scene.addLight(pointLight);
-
-				//>>>>>>>>>>>>>
 			}
 			
 			var radius = 500;
@@ -283,8 +228,14 @@
 				renderer.render( scene, camera );
 			}
 			
-			initEvolution();
+			var animate = function() {
+				requestAnimationFrame( animate );
+				render();
+			}
+			
+			//initEvolution();
 			initGraphics();
+			//animate();
 		});
 	</script>
 </head>  
