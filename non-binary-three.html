@@ -1,0 +1,298 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head> 
+	<meta charset="utf-8" />  
+	<title></title>  
+	<style type='text/css'>
+	</style>
+	<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js'></script>
+	<script type='text/javascript'>
+	
+	/*
+
+
+							
+
+				var animate = function() {
+
+					for(var i = Math.floor(Math.random()*CUBE_COUNT); i < CUBE_COUNT; i++) {
+						cubes[i].position.x += (Math.random()-0.5)*10;
+						cubes[i].position.y += (Math.random()-0.5)*10;
+						cubes[i].position.z += (Math.random()-0.5)*10;
+
+					}
+
+					requestAnimationFrame( animate );
+					render();
+					//stats.update();
+				}
+
+				
+
+				init();
+				animate();
+
+			});
+	*/
+	
+		/* CONSTANTS */
+		// rendering
+		var FPS = 30;
+		var WIDTH = 300, HEIGHT = 300;
+		var VIEW_ANGLE = 45,
+		    ASPECT = WIDTH / HEIGHT,
+		    NEAR = 0.1,
+		    FAR = 10000;
+		
+		// genetics
+		var BITS = 4;
+		var CHROMES = 4;
+		var VARIATIONS = 500;
+		var POTENTIAL_MATES = 10;
+		
+		
+		/* GLOBAL VARS */	
+		// rendering
+		var _container, _output;
+		var renderer, camera, scene;
+		//genetics
+		var timer;
+		var population = [];
+	
+		$(function() {
+			
+			/* GENETICS --------------------------- */
+			
+			var fitness = function(candidate) {
+				var fitness = 0;
+				candidate = candidate.split("");
+				for(var i = 0; i < candidate.length; i++) {
+					if(candidate[i] == 1) {
+						fitness++;
+					}
+				}
+				return fitness/(CHROMES*BITS);
+			}
+			
+			var seedPopulation = function() {
+				for(var i = 0; i < VARIATIONS; i++) {
+					var candidate = "";
+					for(var j = 0; j < CHROMES*BITS; j++) {
+						candidate += Math.floor(Math.random()*10);
+					}
+					population.push(candidate);
+				}
+			}
+			
+			var mutatePopulation = function() {
+				/*
+				[Selection] Select two parent chromosomes from a population according to their fitness (the better fitness, the bigger chance to be selected)
+				[Crossover] With a crossover probability cross over the parents to form a new offspring (children). If no crossover was performed, offspring is an exact copy of parents.
+				[Mutation] With a mutation probability mutate new offspring at each locus (position in chromosome).
+				[Accepting] Place new offspring in a new population
+				*/
+				var offsprings = [];
+				
+				var fitnessMatrix = [];
+				
+				for(var i in population) {
+					fitnessMatrix[i] = fitness(population[i]);
+				}
+				
+				for(var i = 0; i < population.length; i++) {
+					// five random, select fittest.
+					var candidates = selectCandidates(population, fitnessMatrix);
+					
+					var offspring = "";
+					for(var j = 0; j < CHROMES; j++) {
+						var splice = Math.floor(Math.random()*2);
+						offspring += population[candidates[splice]].substr(j*BITS,BITS);
+					}
+					offspring = offspring.split("");
+					for(var j = 0; j < CHROMES*BITS; j++) {
+						var mutate = Math.floor(Math.random()*VARIATIONS*CHROMES);
+						if(mutate == 0) {
+							newVal = offspring[j] + Math.floor(Math.random()*3) - 1;
+							(newVal == -1 ? 9 : newVal);
+							(newVal == 10 ? 0 : newVal);
+							offspring.splice(j,1,newVal);
+						}
+					}
+					offspring = offspring.join("");
+					
+					offsprings.push(offspring);
+				}
+				
+				population = offsprings;	
+			}
+			
+			var selectCandidates = function(population, fitnessMatrix) {
+				var candidates = [];
+				var fitnessSort = function(a, b) {
+					// sort decending
+					return b.fitness - a.fitness;
+				}
+				
+				for(var i = 0; i < POTENTIAL_MATES; i++) {
+					var candidate = Math.floor(Math.random()*VARIATIONS);
+					candidates.push({'id':candidate, 'fitness':fitnessMatrix[candidate]});
+				}
+				candidates.sort(fitnessSort);
+				return [candidates[0]['id'], candidates[1]['id']];
+			}
+			
+			var test = function(fitness) {
+				var avFit = popFitnessAverage();
+				if(avFit > 0.9) {
+					clearTimeout(timer);
+					console.log(population);
+				} else {
+					console.log(avFit);
+					mutatePopulation();
+					drawPopulation();
+				}
+			}
+			
+			var initEvolution = function() {
+				seedPopulation();
+			
+				timer = setInterval(test,100);
+			}
+			
+			var popFitnessAverage = function() {
+				var count = 0;
+				var total = 0;
+				for(var i in population) {
+					count++;
+					total += fitness(population[i]);
+				}
+				return total/count;
+			}
+			
+			var drawPopulation = function() {
+				var output = $('#output');
+				for(var i in population) {
+					opacity = fitness(population[i]);
+					output.prepend("<div style='background:#000;opacity:"+opacity+";float:left;width:10px;height:10px;'>&nbsp;</div>");
+				}
+			}
+			
+
+			/* RENDERING --------------------------- */
+			
+			function initGraphics() {
+				// get the DOM element to attach to
+				// - assume we've got jQuery to hand
+				_container = document.createElement('div');
+				_container.setAttribute('id','container');
+				document.body.appendChild(_container);
+				//_container = $('#container');
+
+				// create a WebGL renderer, camera
+				// and a scene
+				renderer = new THREE.WebGLRenderer();
+				camera = new THREE.Camera(  VIEW_ANGLE,
+				                                ASPECT,
+				                                NEAR,
+				                                FAR  );
+				scene = new THREE.Scene();
+
+				// the camera starts at 0,0,0 so pull it back
+				camera.position.x = 1000;
+
+				// start the renderer
+				renderer.setSize(WIDTH, HEIGHT);
+
+				// attach the render-supplied DOM element
+				_container.appendChild(renderer.domElement);
+
+				//>>>>>>>>>>>
+
+				// create the sphere's material
+				var depthMaterial = new THREE.MeshDepthMaterial(
+				{
+					opacity: 0.7
+				});
+
+				var lambMaterial = new THREE.MeshLambertMaterial(
+				{
+				    color: 0xCC0000,
+					opacity: 0.1
+				});
+
+				//>>>>>>>>>>				
+
+				for(var i = 0; i < CUBE_COUNT; i++) {
+					cubes[i] = new THREE.Mesh(
+					   new THREE.Cube(50,50,50),
+					   [depthMaterial]);
+
+					cubes[i].position.x = (Math.random()-0.5)*2000;
+					cubes[i].position.y = (Math.random()-0.5)*2000;
+					cubes[i].position.z = (Math.random()-0.5)*2000;
+
+					// add the sphere to the scene
+					scene.addObject(cubes[i]);
+				}
+
+				// create the sphere's material
+				var particleMaterial = new THREE.ParticleBasicMaterial(
+				{
+				    color: 0xCCCC00,
+					opacity: 1
+				});
+
+				//>>>>>>>>>>				
+
+				for(var i = 0; i < CUBE_COUNT; i++) {
+					var particle = new THREE.Particle(particleMaterial);
+
+					particle.position.x = (Math.random()-0.5)*2000;
+					particle.position.y = (Math.random()-0.5)*2000;
+					particle.position.z = (Math.random()-0.5)*2000;
+
+					// add the sphere to the scene
+					scene.addObject(particle);
+				}			
+
+				//>>>>>>>>>>>>
+
+
+				// create a point light
+				var pointLight = new THREE.PointLight( 0xFFFFFF );
+
+				// set its position
+				pointLight.position.x = 500;
+				pointLight.position.y = 500;
+				pointLight.position.z = -300;
+
+				// add to the scene
+				scene.addLight(pointLight);
+
+				//>>>>>>>>>>>>>
+			}
+			
+			var radius = 500;
+			var theta = 0;
+
+			var render = function() {
+				theta += 0.1 + Math.random();
+				camera.position.x = radius * Math.sin( theta * Math.PI / 360 );
+				camera.position.y = radius * Math.pow(Math.sin( theta  * Math.PI / 360 ),2);
+				camera.position.z = radius * Math.PI * Math.cos( theta * Math.PI / 360 );
+				renderer.render( scene, camera );
+			}
+			
+			initEvolution();
+			initGraphics();
+		});
+	</script>
+</head>  
+ 
+<body>
+	
+	<div id='output'></div>
+ 
+</body>
+ 
+</html>
