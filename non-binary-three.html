@@ -14,9 +14,9 @@
 		/* CONSTANTS */
 		// rendering
 		var FPS = 30;
-		var WIDTH = 300;
-		var HEIGHT = 300;
-		var VIEW_ANGLE = 45,
+		var WIDTH = 700;
+		var HEIGHT = 700;
+		var VIEW_ANGLE = 65,
 		    ASPECT = WIDTH / HEIGHT,
 		    NEAR = 0.1,
 		    FAR = 10000;
@@ -32,9 +32,11 @@
 		// rendering
 		var _output;
 		var renderer, camera, scene;
+		var rendered = [];
 		//genetics
 		var timer;
 		var population = [];
+		var generations = 0;
 	
 		$(function() {
 			
@@ -59,6 +61,7 @@
 					}
 					population.push(candidate);
 				}
+				generations++;
 			}
 			
 			var mutatePopulation = function() {
@@ -100,7 +103,8 @@
 					offsprings.push(offspring);
 				}
 				
-				population = offsprings;	
+				population = offsprings;
+				generations++;
 			}
 			
 			var selectCandidates = function(population, fitnessMatrix) {
@@ -133,7 +137,7 @@
 			var initEvolution = function() {
 				seedPopulation();
 			
-				timer = setInterval(test,100);
+				timer = setInterval(test,1000);
 			}
 			
 			var popFitnessAverage = function() {
@@ -182,7 +186,7 @@
 				scene = new THREE.Scene();
 
 				// the camera starts at 0,0,0 so pull it back
-				camera.position.x = 1000;
+				camera.position.x = 100000;
 
 				// start the renderer
 				renderer.setSize(WIDTH, HEIGHT);
@@ -191,14 +195,16 @@
 				_output.append(renderer.domElement);				
 
 				
-				for(var i = 0; i < 50; i++) {
+				for(var i = 0; i < 100; i++) {
 					var cube = new THREE.Mesh(
 					   new THREE.Cube(50,50,50),
 					   [depthMaterial]);
 
-					cube.position.x = (Math.random()-0.5)*2000;
-					cube.position.y = (Math.random()-0.5)*2000;
-					cube.position.z = (Math.random()-0.5)*2000;
+					cube.position.x = 50*i-(25*50);
+					cube.position.y = 0;
+					cube.position.z = 0;
+					
+					rendered.push(cube);
 
 					// add the sphere to the scene
 					scene.addObject(cube);
@@ -211,7 +217,7 @@
 				// set its position
 				pointLight.position.x = 500;
 				pointLight.position.y = 500;
-				pointLight.position.z = -300;
+				pointLight.position.z = -500;
 
 				// add to the scene
 				scene.addLight(pointLight);
@@ -228,14 +234,44 @@
 				renderer.render( scene, camera );
 			}
 			
+			var previousGen = 0;
 			var animate = function() {
+				
+				for(var i in rendered) {
+					rendered[i].position.z -= 50;
+					
+					if(rendered[i].position.z < -10000) {
+						scene.removeObject(rendered[i]);
+						delete rendered[i];
+					}
+				}
+				
+				if(previousGen != generations) {
+					for(var i = 0; i < 100; i++) {
+						var cube = new THREE.Mesh(
+						   new THREE.Cube(50,50,50),
+						   [depthMaterial]);
+
+						cube.position.x = 50*i-(25*50);
+						cube.position.y = 0;
+						cube.position.z = 0;
+					
+						rendered.push(cube);
+
+						// add the sphere to the scene
+						scene.addObject(cube);
+						
+					}
+					previousGen = generations;
+				}
+				
 				requestAnimationFrame( animate );
 				render();
 			}
 			
-			//initEvolution();
+			initEvolution();
 			initGraphics();
-			//animate();
+			animate();
 		});
 	</script>
 </head>  
