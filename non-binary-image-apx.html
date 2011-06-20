@@ -4,7 +4,7 @@
 	<meta charset="utf-8" />  
 	<title></title>  
 	<style type='text/css'>
-	#output { position: absolute; top: 100px; left: 50px; background: #e7e7e7; display: inline-block; }
+	#output { position: absolute; top: 100px; left: 50px; background: #f0f0f0; display: inline-block; }
 	#trigger { position: absolute; top: 50px; left: 50px;  background:#5555e7; color:#fff; font-size:20px; font-weight: bold; display: inline-block; padding:5px; font-family:helvetica, arial, sans-serif; cursor:pointer; }
 	</style>
 	<script type='text/javascript' src='js/jquery.js'></script>
@@ -23,7 +23,7 @@
 		// genetics
 		var BITS = 2;
 		var CHROMES = 600;
-		var VARIATIONS = 200;
+		var VARIATIONS = 500;
 		var POTENTIAL_MATES = 10;
 		var MUT_FPS = 1;		
 		
@@ -102,9 +102,7 @@
 					for(var j = 0; j < CHROMES*BITS; j++) {
 						var mutate = Math.floor(Math.random()*mutateFactor);
 						if(mutate == 0) {
-							newVal = offspring[j] + Math.floor(Math.random()*3) - 1;
-							(newVal == -1 ? 9 : newVal);
-							(newVal == 10 ? 0 : newVal);
+							newVal = Math.floor(Math.random()*10);
 							offspring.splice(j,1,newVal);
 						}
 					}
@@ -260,7 +258,11 @@
 				img.src = "assets/picture-2.jpg";
 				
 				
-				ctx.clearRect(0,0,WIDTH,HEIGHT);				
+				ctx.clearRect(0,0,WIDTH,HEIGHT);	
+				
+				ctx.fillStyle = "rgb(0,0,0)";
+				ctx.fillText("Seeding population...",10,23);
+							
 				animTimer = setInterval(animate,1000/REN_FPS);
 			}
 						
