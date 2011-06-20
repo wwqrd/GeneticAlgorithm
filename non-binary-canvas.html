@@ -23,7 +23,7 @@
 		// genetics
 		var BITS = 2;
 		var CHROMES = 10;
-		var VARIATIONS = 500;
+		var VARIATIONS = 300;
 		var POTENTIAL_MATES = 10;
 		var MUT_FPS = 20;		
 		
@@ -94,7 +94,7 @@
 					}
 					offspring = offspring.split("");
 					for(var j = 0; j < CHROMES*BITS; j++) {
-						var mutate = Math.floor(Math.random()*VARIATIONS*CHROMES);
+						var mutate = Math.floor(Math.random()*CHROMES*BITS*CHROMES);
 						if(mutate == 0) {
 							newVal = offspring[j] + Math.floor(Math.random()*3) - 1;
 							(newVal == -1 ? 9 : newVal);
@@ -128,7 +128,7 @@
 			
 			var test = function(fitness) {
 				var avFit = popFitnessAverage();
-				if(avFit > 0.8) {
+				if(avFit > 0.7) {
 					clearTimeout(timer);
 					clearTimeout(animTimer);
 					console.log(population);
