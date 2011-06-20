@@ -22,7 +22,7 @@
 		
 		// genetics
 		var BITS = 2;
-		var CHROMES = 500;
+		var CHROMES = 600;
 		var VARIATIONS = 500;
 		var POTENTIAL_MATES = 10;
 		var MUT_FPS = 1;		
@@ -87,6 +87,8 @@
 					fitnessMatrix = fitnesses;
 				}
 				
+				var mutateFactor = CHROMES*POTENTIAL_MATES*popFitnessAverage();
+				
 				for(var i = 0; i < population.length; i++) {
 					// five random, select fittest.
 					var candidates = selectCandidates(population, fitnessMatrix);
@@ -98,7 +100,7 @@
 					}
 					offspring = offspring.split("");
 					for(var j = 0; j < CHROMES*BITS; j++) {
-						var mutate = Math.floor(Math.random()*CHROMES*POTENTIAL_MATES);
+						var mutate = Math.floor(Math.random()*mutateFactor);
 						if(mutate == 0) {
 							newVal = offspring[j] + Math.floor(Math.random()*3) - 1;
 							(newVal == -1 ? 9 : newVal);
@@ -132,13 +134,13 @@
 			
 			var test = function(fitness) {
 				var avFit = popFitnessAverage();
-				if(avFit > 0.71) {
+				if(avFit > 0.95) {
 					clearTimeout(timer);
 					clearTimeout(animTimer);
 					renderAv();
 					console.log(population);
 				} else {
-					console.log(avFit);
+					//console.log(avFit);
 					mutatePopulation();
 				}
 			}
@@ -158,16 +160,6 @@
 				}
 				return total/count;
 			}
-			
-			/*
-			var drawPopulation = function() {
-				var output = $('#output');
-				for(var i in population) {
-					opacity = fitness(population[i]);
-					output.prepend("<div style='background:#000;opacity:"+opacity+";float:left;width:10px;height:10px;'>&nbsp;</div>");
-				}
-			}
-			*/
 			
 
 			/* RENDERING --------------------------- */
@@ -231,7 +223,10 @@
 					}
 					fitnesses[i] = fitness();				
 				}	
-				test();			
+				ctx.clearRect(5,5,WIDTH,20);
+				ctx.fillStyle = "rgb(0,0,0)";
+				ctx.fillText(10,10,popFitnessAverage());
+				test();		
 			}
 			
 			
