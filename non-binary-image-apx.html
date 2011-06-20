@@ -13,8 +13,8 @@
 		/* CONSTANTS */
 		// rendering
 		var REN_FPS = 5;
-		var WIDTH = 350;
-		var HEIGHT = 350;
+		var WIDTH = 200;
+		var HEIGHT = 250;
 		var VIEW_ANGLE = 65,
 		    ASPECT = WIDTH / HEIGHT,
 		    NEAR = 0.1,
@@ -23,7 +23,7 @@
 		// genetics
 		var BITS = 2;
 		var CHROMES = 600;
-		var VARIATIONS = 500;
+		var VARIATIONS = 200;
 		var POTENTIAL_MATES = 10;
 		var MUT_FPS = 1;		
 		
@@ -223,9 +223,9 @@
 					}
 					fitnesses[i] = fitness();				
 				}	
-				ctx.clearRect(5,5,WIDTH,20);
+				ctx.clearRect(5,5,100,25);
 				ctx.fillStyle = "rgb(0,0,0)";
-				ctx.fillText(10,10,popFitnessAverage());
+				ctx.fillText(Math.round(popFitnessAverage()*1000000)/1000000,10,23);
 				test();		
 			}
 			
@@ -240,6 +240,7 @@
 						
 				_output.prepend(canvas);
 				ctx = canvas.getContext('2d');
+				ctx.font = '20px bold Arial';
 				
 				var canvas2 = document.createElement("canvas");
 				canvas2.setAttribute('width',WIDTH);
@@ -257,6 +258,7 @@
 					initEvolution();
 				}
 				img.src = "assets/picture-2.jpg";
+				
 				
 				ctx.clearRect(0,0,WIDTH,HEIGHT);				
 				animTimer = setInterval(animate,1000/REN_FPS);
