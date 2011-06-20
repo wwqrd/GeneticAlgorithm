@@ -4,16 +4,15 @@
 	<meta charset="utf-8" />  
 	<title></title>  
 	<style type='text/css'>
-	#output { background: #000; display: inline-block; }
-	</style> 
-	<script type='text/javascript' src='js/Three.js'></script>
-	<script type='text/javascript' src='js/RequestAnimationFrame.js'></script>
-	<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js'></script>
+	#output { position: absolute; top: 100px; left: 50px; background: #e7e7e7; display: inline-block; }
+	#trigger { position: absolute; top: 50px; left: 50px;  background:#5555e7; color:#fff; font-size:20px; font-weight: bold; display: inline-block; padding:5px; font-family:helvetica, arial, sans-serif; cursor:pointer; }
+	</style>
+	<script type='text/javascript' src='js/jquery.js'></script>
 	<script type='text/javascript'>
 	
 		/* CONSTANTS */
 		// rendering
-		var FPS = 30;
+		var REN_FPS = 20;
 		var WIDTH = 700;
 		var HEIGHT = 700;
 		var VIEW_ANGLE = 65,
@@ -22,21 +21,25 @@
 		    FAR = 10000;
 		
 		// genetics
-		var BITS = 4;
-		var CHROMES = 4;
+		var BITS = 2;
+		var CHROMES = 10;
 		var VARIATIONS = 500;
 		var POTENTIAL_MATES = 10;
-		
+		var MUT_FPS = 20;		
 		
 		/* GLOBAL VARS */	
 		// rendering
 		var _output;
 		var renderer, camera, scene;
 		var rendered = [];
+		var animTimer;
+		var ctx;
+		var canvas;
+		
 		//genetics
 		var timer;
 		var population = [];
-		var generations = 0;
+		var generations = 0;		
 	
 		$(function() {
 			
@@ -46,7 +49,7 @@
 				var fitness = 0;
 				candidate = candidate.split("");
 				for(var i = 0; i < candidate.length; i++) {
-					if(candidate[i] == 1) {
+					if(candidate[i] == 3) {
 						fitness++;
 					}
 				}
@@ -54,6 +57,7 @@
 			}
 			
 			var seedPopulation = function() {
+				population = [];
 				for(var i = 0; i < VARIATIONS; i++) {
 					var candidate = "";
 					for(var j = 0; j < CHROMES*BITS; j++) {
@@ -124,8 +128,9 @@
 			
 			var test = function(fitness) {
 				var avFit = popFitnessAverage();
-				if(avFit > 0.9) {
+				if(avFit > 0.8) {
 					clearTimeout(timer);
+					clearTimeout(animTimer);
 					console.log(population);
 				} else {
 					console.log(avFit);
@@ -137,7 +142,7 @@
 			var initEvolution = function() {
 				seedPopulation();
 			
-				timer = setInterval(test,1000);
+				timer = setInterval(test,1000/MUT_FPS);
 			}
 			
 			var popFitnessAverage = function() {
@@ -163,46 +168,64 @@
 
 			/* RENDERING --------------------------- */
 			
-			// materials
-			var depthMaterial = new THREE.MeshDepthMaterial(
-			{
-				opacity: 0.7
-			});
-
-			var lambMaterial = new THREE.MeshLambertMaterial(
-			{
-			    color: 0xCC0000,
-				opacity: 0.1
-			});
+			var render = function() {
+				for(var i in population) {
+					var x1, y1, x2, y2, x3, y3, r, g, b, a;
+					x1 = (population[i].substr(0,2)/100)*WIDTH;
+					y1 = (population[i].substr(2,2)/100)*HEIGHT;
+					x2 = (population[i].substr(4,2)/100)*WIDTH;
+					y2 = (population[i].substr(6,2)/100)*HEIGHT;
+					x3 = (population[i].substr(8,2)/100)*WIDTH;
+					y3 = (population[i].substr(10,2)/100)*HEIGHT;
+					r = Math.floor((population[i].substr(12,2)/100)*255);
+					g = Math.floor((population[i].substr(14,2)/100)*255);
+					b = Math.floor((population[i].substr(16,2)/100)*255);
+					a = population[i].substr(18,2)/100;
+					ctx.fillStyle = "rgba("+r+","+g+","+b+","+a+")";
+					//console.log("rgba("+r+","+g+","+b+","+a+")");
+					ctx.beginPath();
+					ctx.moveTo(x1,y1);
+					ctx.lineTo(x2,y2);
+					ctx.lineTo(x3,y3);
+					ctx.fill();
+				}
+			}
 			
-			var animTimer;
+			
 			function initGraphics() {
 				_output = $('#output');
-				var canvas = document.createElement("canvas");
+				_output.empty();
+				canvas = document.createElement("canvas");
 				canvas.setAttribute('width',WIDTH);
 				canvas.setAttribute('height',HEIGHT);
 						
-				_output.append(canvas);
-				var ctx = canvas.getContext('2d');
-				animTimer = setInterval(animate,1000);
+				_output.prepend(canvas);
+				ctx = canvas.getContext('2d');
+				ctx.clearRect(0,0,WIDTH,HEIGHT);
+				animTimer = setInterval(animate,1000/REN_FPS);
 			}
-			
-			var previousGen = 0;
-			
+						
 			var animate = function() {
-				translate(x, y);
+				//translate(x, y);
+				ctx.clearRect(0,0,WIDTH,HEIGHT);
+				
 				render();
 			}
 			
-			initEvolution();
-			initGraphics();
+			
+			$('#trigger').bind('click',function() {
+				initEvolution();
+				initGraphics();
+			})			
 		});
 	</script>
 </head>  
  
 <body>
 	
+	<div id='trigger'>Go</div>
 	<div id='output'></div>
+	
  
 </body>
  

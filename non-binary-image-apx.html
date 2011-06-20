@@ -4,18 +4,17 @@
 	<meta charset="utf-8" />  
 	<title></title>  
 	<style type='text/css'>
-	#output { background: #e7e7e7; display: inline-block; }
-	</style> 
-	<script type='text/javascript' src='js/Three.js'></script>
-	<script type='text/javascript' src='js/RequestAnimationFrame.js'></script>
-	<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js'></script>
+	#output { position: absolute; top: 100px; left: 50px; background: #e7e7e7; display: inline-block; }
+	#trigger { position: absolute; top: 50px; left: 50px;  background:#5555e7; color:#fff; font-size:20px; font-weight: bold; display: inline-block; padding:5px; font-family:helvetica, arial, sans-serif; cursor:pointer; }
+	</style>
+	<script type='text/javascript' src='js/jquery.js'></script>
 	<script type='text/javascript'>
 	
 		/* CONSTANTS */
 		// rendering
-		var FPS = 30;
-		var WIDTH = 700;
-		var HEIGHT = 700;
+		var REN_FPS = 5;
+		var WIDTH = 350;
+		var HEIGHT = 350;
 		var VIEW_ANGLE = 65,
 		    ASPECT = WIDTH / HEIGHT,
 		    NEAR = 0.1,
@@ -23,37 +22,46 @@
 		
 		// genetics
 		var BITS = 2;
-		var CHROMES = 10;
-		var VARIATIONS = 500;
+		var CHROMES = 300;
+		var VARIATIONS = 300;
 		var POTENTIAL_MATES = 10;
-		
+		var MUT_FPS = 1;		
 		
 		/* GLOBAL VARS */	
 		// rendering
 		var _output;
 		var renderer, camera, scene;
 		var rendered = [];
+		var animTimer;
+		var ctx;
+		var canvas;
+		
 		//genetics
 		var timer;
 		var population = [];
+		var fitnesses = [];
 		var generations = 0;
+		var target = [];	
 	
 		$(function() {
 			
 			/* GENETICS --------------------------- */
 			
-			var fitness = function(candidate) {
+			var fitness = function() {
+				var fitnessData = ctx.getImageData(0, 0, WIDTH, HEIGHT);
+				fitnessData = fitnessData.data;
 				var fitness = 0;
-				candidate = candidate.split("");
-				for(var i = 0; i < candidate.length; i++) {
-					if(candidate[i] == 1) {
-						fitness++;
+				var counters = fitnessData.length * (3/4) * 255;
+				for(var i = 0; i < fitnessData.length; i++) {
+					if(i+1%4 != 0) { // skip alphas
+						fitness += Math.abs(target[i]-fitnessData[i]);
 					}
 				}
-				return fitness/(CHROMES*BITS);
+				return (counters-fitness)/counters;
 			}
 			
 			var seedPopulation = function() {
+				population = [];
 				for(var i = 0; i < VARIATIONS; i++) {
 					var candidate = "";
 					for(var j = 0; j < CHROMES*BITS; j++) {
@@ -76,7 +84,7 @@
 				var fitnessMatrix = [];
 				
 				for(var i in population) {
-					fitnessMatrix[i] = fitness(population[i]);
+					fitnessMatrix = fitnesses;
 				}
 				
 				for(var i = 0; i < population.length; i++) {
@@ -90,7 +98,7 @@
 					}
 					offspring = offspring.split("");
 					for(var j = 0; j < CHROMES*BITS; j++) {
-						var mutate = Math.floor(Math.random()*VARIATIONS*CHROMES);
+						var mutate = Math.floor(Math.random()*CHROMES*POTENTIAL_MATES);
 						if(mutate == 0) {
 							newVal = offspring[j] + Math.floor(Math.random()*3) - 1;
 							(newVal == -1 ? 9 : newVal);
@@ -124,28 +132,29 @@
 			
 			var test = function(fitness) {
 				var avFit = popFitnessAverage();
-				if(avFit > 0.8) {
+				if(avFit > 0.71) {
 					clearTimeout(timer);
+					clearTimeout(animTimer);
+					renderAv();
 					console.log(population);
 				} else {
 					console.log(avFit);
 					mutatePopulation();
-					//drawPopulation();
 				}
 			}
 			
 			var initEvolution = function() {
 				seedPopulation();
 			
-				timer = setInterval(test,1000/20);
+				//timer = setInterval(test,1000/MUT_FPS);
 			}
 			
 			var popFitnessAverage = function() {
 				var count = 0;
 				var total = 0;
-				for(var i in population) {
+				for(var i in fitnesses) {
 					count++;
-					total += fitness(population[i]);
+					total += fitnesses[i];
 				}
 				return total/count;
 			}
@@ -163,44 +172,95 @@
 
 			/* RENDERING --------------------------- */
 			
-			var render = function() {
-				for(var i in population) {
-					var x1, y1, x2, y2, x3, y3, r, g, b, a;
-					x1 = (population[i].substr(0,2)/100)*WIDTH;
-					y1 = (population[i].substr(2,2)/100)*HEIGHT;
-					x2 = (population[i].substr(4,2)/100)*WIDTH;
-					y2 = (population[i].substr(6,2)/100)*HEIGHT;
-					x3 = (population[i].substr(8,2)/100)*WIDTH;
-					y3 = (population[i].substr(10,2)/100)*HEIGHT;
-					r = Math.floor((population[i].substr(12,2)/100)*255);
-					g = Math.floor((population[i].substr(14,2)/100)*255);
-					b = Math.floor((population[i].substr(16,2)/100)*255);
-					a = population[i].substr(18,2)/100;
-					ctx.fillStyle = "rgba("+r+","+g+","+b+","+a+")";
-					//console.log("rgba("+r+","+g+","+b+","+a+")");
-					ctx.beginPath();
-					ctx.moveTo(x1,y1);
-					ctx.lineTo(x2,y2);
-					ctx.lineTo(x3,y3);
-					ctx.fill();
+			var renderAv = function() {
+				ctx.clearRect(0,0,WIDTH,HEIGHT);
+				for(var i in population) {									
+					for(var j = 0; j < population[i].length/20; j++) {
+						var k = population[i].substr(j*20,20);
+						var x1, y1, x2, y2, x3, y3, r, g, b, a;
+						x1 = (k.substr(0,2)/100)*WIDTH;
+						y1 = (k.substr(2,2)/100)*HEIGHT;
+						x2 = (k.substr(4,2)/100)*WIDTH;
+						y2 = (k.substr(6,2)/100)*HEIGHT;
+						x3 = (k.substr(8,2)/100)*WIDTH;
+						y3 = (k.substr(10,2)/100)*HEIGHT;
+						r = Math.floor((k.substr(12,2)/100)*255);
+						g = Math.floor((k.substr(14,2)/100)*255);
+						b = Math.floor((k.substr(16,2)/100)*255);
+						a = k.substr(18,2)/(100);
+						ctx.fillStyle = "rgba("+r+","+g+","+b+","+a+")";
+						//console.log("rgba("+r+","+g+","+b+","+a+")");
+						ctx.beginPath();
+						ctx.moveTo(x1,y1);
+						ctx.lineTo(x2,y2);
+						ctx.lineTo(x3,y3);
+						ctx.fill();	
+					}				
 				}
 			}
 			
-			var ctx;
-			var animTimer;
+			var render = function() {
+				for(var i in population) {
+					ctx.clearRect(0,0,WIDTH,HEIGHT);				
+					for(var j = 0; j < population[i].length/20; j++) {
+						var k = population[i].substr(j*20,20);
+						var x1, y1, x2, y2, x3, y3, r, g, b, a;
+						x1 = (k.substr(0,2)/100)*WIDTH;
+						y1 = (k.substr(2,2)/100)*HEIGHT;
+						x2 = (k.substr(4,2)/100)*WIDTH;
+						y2 = (k.substr(6,2)/100)*HEIGHT;
+						x3 = (k.substr(8,2)/100)*WIDTH;
+						y3 = (k.substr(10,2)/100)*HEIGHT;
+						r = Math.floor((k.substr(12,2)/100)*255);
+						g = Math.floor((k.substr(14,2)/100)*255);
+						b = Math.floor((k.substr(16,2)/100)*255);
+						a = k.substr(18,2)/100;
+						ctx.fillStyle = "rgba("+r+","+g+","+b+","+a+")";
+						//console.log("rgba("+r+","+g+","+b+","+a+")");
+						ctx.beginPath();
+						ctx.moveTo(x1,y1);
+						ctx.lineTo(x2,y2);
+						ctx.lineTo(x3,y3);
+						ctx.fill();	
+					}
+					fitnesses[i] = fitness();				
+				}	
+				test();			
+			}
+			
+			
 			function initGraphics() {
 				_output = $('#output');
-				var canvas = document.createElement("canvas");
+				_output.css({'width':WIDTH});
+				_output.empty();
+				canvas = document.createElement("canvas");
 				canvas.setAttribute('width',WIDTH);
 				canvas.setAttribute('height',HEIGHT);
 						
-				_output.append(canvas);
+				_output.prepend(canvas);
 				ctx = canvas.getContext('2d');
-				animTimer = setInterval(animate,1000/20);
+				
+				var canvas2 = document.createElement("canvas");
+				canvas2.setAttribute('width',WIDTH);
+				canvas2.setAttribute('height',HEIGHT);
+				
+				_output.prepend(canvas2);
+				ctx2 = canvas2.getContext('2d');
+
+				var img = new Image();
+				img.onload = function(){
+					ctx2.drawImage(this,0,0,WIDTH,HEIGHT);
+					target = ctx2.getImageData(0, 0, WIDTH, HEIGHT);
+					target = target.data;
+					console.log(target);
+					initEvolution();
+				}
+				img.src = "assets/picture-1.jpg";
+				
+				ctx.clearRect(0,0,WIDTH,HEIGHT);				
+				animTimer = setInterval(animate,1000/REN_FPS);
 			}
-			
-			var previousGen = 0;
-			
+						
 			var animate = function() {
 				//translate(x, y);
 				ctx.clearRect(0,0,WIDTH,HEIGHT);
@@ -208,15 +268,19 @@
 				render();
 			}
 			
-			initEvolution();
-			initGraphics();
+			
+			$('#trigger').bind('click',function() {
+				initGraphics();
+			})			
 		});
 	</script>
 </head>  
  
 <body>
 	
+	<div id='trigger'>Go</div>
 	<div id='output'></div>
+	
  
 </body>
  
