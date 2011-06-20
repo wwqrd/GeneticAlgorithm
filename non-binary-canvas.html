@@ -94,7 +94,7 @@
 					}
 					offspring = offspring.split("");
 					for(var j = 0; j < CHROMES*BITS; j++) {
-						var mutate = Math.floor(Math.random()*CHROMES*BITS*CHROMES);
+						var mutate = Math.floor(Math.random()*CHROMES*POTENTIAL_MATES);
 						if(mutate == 0) {
 							newVal = offspring[j] + Math.floor(Math.random()*3) - 1;
 							(newVal == -1 ? 9 : newVal);
